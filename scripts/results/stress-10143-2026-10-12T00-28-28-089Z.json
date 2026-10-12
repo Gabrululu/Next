@@ -1,0 +1,89 @@
+{
+  "label": "SIMULATED ENTRANTS — ephemeral wallets generated and funded by the test script",
+  "network": "Monad Testnet",
+  "chainId": 10143,
+  "rpc": "https://testnet-rpc.monad.xyz",
+  "explorer": "https://testnet.monadvision.com",
+  "contract": "0xA68cd11d30F10b7C83d1C78754E4Ae64e6C64Bae",
+  "campaignId": 4,
+  "campaignName": "Stress test #2026-10-12T00-28 (simulated entrants)",
+  "startedAt": "2026-10-12T00:28:34.126Z",
+  "n": 5,
+  "sent": 5,
+  "confirmed": 5,
+  "reverted": 0,
+  "notFound": 0,
+  "failedToSend": 0,
+  "retried": 0,
+  "sendErrors": [],
+  "registrantsOnChain": 5,
+  "wallClockMs": 1061,
+  "sendPhaseMs": 160,
+  "avgConfirmMs": 1061,
+  "p50ConfirmMs": 1061,
+  "p95ConfirmMs": 1061,
+  "blockRange": {
+    "first": 70254474,
+    "last": 70254474,
+    "span": 1
+  },
+  "perBlock": {
+    "70254474": 5
+  },
+  "gas": {
+    "estimate": 117835,
+    "limit": 135510,
+    "maxFeePerGasWei": "110000000000",
+    "usedAvg": 135510
+  },
+  "timeline": [
+    {
+      "i": 0,
+      "hash": "0x5f9dba4c0e7b97ee70fbc718022a60f583fdfe2a05a8f6e16ed09b3a1d32e975",
+      "sentMs": 0,
+      "confirmMs": 1061,
+      "block": 70254474,
+      "status": "success"
+    },
+    {
+      "i": 1,
+      "hash": "0xae5b792132bdab43bd4c93543139329aa409935d303e77451a830726c462b074",
+      "sentMs": 0,
+      "confirmMs": 1061,
+      "block": 70254474,
+      "status": "success"
+    },
+    {
+      "i": 2,
+      "hash": "0xf396644c528dc3604ae8c49211358120a57ee65c7fa2804108ea3870ecb5996d",
+      "sentMs": 0,
+      "confirmMs": 1061,
+      "block": 70254474,
+      "status": "success"
+    },
+    {
+      "i": 3,
+      "hash": "0xaea43ac5abf8405823a9955c2ea0dee6c190fb59e01a5ae6bb9a8dea1886b3fb",
+      "sentMs": 0,
+      "confirmMs": 1061,
+      "block": 70254474,
+      "status": "success"
+    },
+    {
+      "i": 4,
+      "hash": "0x1a7a5e559c5f03a3e3e0fcd5b557ba50b140b3857f29274e88786080ed1ccbed",
+      "sentMs": 1,
+      "confirmMs": 1061,
+      "block": 70254474,
+      "status": "success"
+    }
+  ],
+  "draw": {
+    "tx": "0x3bb7d98d7085f55d955585202a3967761656d8990af56247b94c08ace8295f0a",
+    "block": 70254569,
+    "gasUsed": 258005,
+    "seed": "0xe667ed215fca1dea714f18032d6b42c878fc7fa8024a224ecb1bc09026621029",
+    "winners": 2,
+    "verified": true
+  }
+}

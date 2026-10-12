@@ -1,0 +1,20 @@
+{
+  "name": "next-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "vector": "tsx gen-vector.ts",
+    "test": "tsx test-vector.ts",
+    "verify": "tsx verify.ts",
+    "stress": "tsx stress.ts"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.7",
+    "viem": "2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

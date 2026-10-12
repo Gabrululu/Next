@@ -1,0 +1,89 @@
+{
+  "label": "SIMULATED ENTRANTS — ephemeral wallets generated and funded by the test script",
+  "network": "Monad Testnet",
+  "chainId": 10143,
+  "rpc": "https://testnet-rpc.monad.xyz",
+  "explorer": "https://testnet.monadvision.com",
+  "contract": "0xA68cd11d30F10b7C83d1C78754E4Ae64e6C64Bae",
+  "campaignId": 3,
+  "campaignName": "Stress test #2026-10-12T00-17 (simulated entrants)",
+  "startedAt": "2026-10-12T00:17:50.944Z",
+  "n": 5,
+  "sent": 0,
+  "confirmed": 0,
+  "reverted": 0,
+  "notFound": 0,
+  "failedToSend": 5,
+  "retried": 5,
+  "sendErrors": [
+    "Missing or invalid parameters."
+  ],
+  "registrantsOnChain": 0,
+  "wallClockMs": 2275,
+  "sendPhaseMs": 2275,
+  "avgConfirmMs": 0,
+  "p50ConfirmMs": 0,
+  "p95ConfirmMs": 0,
+  "blockRange": {
+    "first": 0,
+    "last": 0,
+    "span": 0
+  },
+  "perBlock": {},
+  "gas": {
+    "estimate": 117835,
+    "limit": 135510,
+    "maxFeePerGasWei": "110000000000",
+    "usedAvg": 0
+  },
+  "timeline": [
+    {
+      "i": 0,
+      "hash": null,
+      "sentMs": 0,
+      "confirmMs": null,
+      "block": null,
+      "status": "send-failed"
+    },
+    {
+      "i": 1,
+      "hash": null,
+      "sentMs": 0,
+      "confirmMs": null,
+      "block": null,
+      "status": "send-failed"
+    },
+    {
+      "i": 2,
+      "hash": null,
+      "sentMs": 0,
+      "confirmMs": null,
+      "block": null,
+      "status": "send-failed"
+    },
+    {
+      "i": 3,
+      "hash": null,
+      "sentMs": 1,
+      "confirmMs": null,
+      "block": null,
+      "status": "send-failed"
+    },
+    {
+      "i": 4,
+      "hash": null,
+      "sentMs": 1,
+      "confirmMs": null,
+      "block": null,
+      "status": "send-failed"
+    }
+  ],
+  "draw": {
+    "tx": "0x09ba2ec8720314940db01c2404cd8734b037a1d9e7de210e0a737a5938f0ca27",
+    "block": 70252449,
+    "gasUsed": 78833,
+    "seed": "0xb9464e2665c2215f462c92d71b0f80a149f7dd2da24bd38f2c8617942e9f6ce7",
+    "winners": 0,
+    "verified": true
+  }
+}

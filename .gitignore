@@ -1,0 +1,12 @@
+.env
+.env.local
+**/.env
+**/.env.local
+node_modules/
+contracts/out/
+contracts/cache/
+contracts/broadcast/*/31337/
+web/.next/
+scripts/.wallets/
+*.log
+scripts/results/stress-31337-*

@@ -1,0 +1,17 @@
+{
+  "name": "next-fair-access",
+  "private": true,
+  "packageManager": "pnpm@10.6.3",
+  "scripts": {
+    "setup": "pnpm --dir scripts install && pnpm --dir web install",
+    "test:contracts": "cd contracts && forge test -vv",
+    "test:vector": "pnpm --dir scripts test",
+    "test": "pnpm test:contracts && pnpm test:vector",
+    "deploy": "cd contracts && forge script script/Deploy.s.sol --rpc-url https://testnet-rpc.monad.xyz --broadcast",
+    "abi": "cd contracts && forge build && cd ../scripts && node gen-abi.mjs",
+    "stress": "pnpm --dir scripts stress",
+    "verify": "pnpm --dir scripts verify",
+    "dev": "pnpm --dir web dev",
+    "build": "pnpm --dir web build"
+  }
+}
