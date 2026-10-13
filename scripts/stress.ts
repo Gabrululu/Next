@@ -282,10 +282,12 @@ if (DO_DRAW) {
 const json = JSON.stringify(result, null, 2);
 mkdirSync(new URL("./results/", import.meta.url), { recursive: true });
 writeFileSync(new URL(`./results/stress-${CHAIN_ID}-${runId}.json`, import.meta.url), json);
+writeFileSync(new URL("./results/results.json", import.meta.url), json); // latest run (spec: results.json)
 // Local dev chains (anvil/hardhat: 31337) never feed the public dashboard.
 if (CHAIN_ID !== 31337 && existsSync(new URL("../web/public/", import.meta.url))) {
   mkdirSync(new URL("../web/public/stress/", import.meta.url), { recursive: true });
   writeFileSync(new URL("../web/public/stress/latest.json", import.meta.url), json);
   log("Wrote web/public/stress/latest.json for the dashboard");
 }
-log(`Wrote scripts/results/stress-${CHAIN_ID}-${runId}.json`);
+log(`Wrote scripts/results/stress-${CHAIN_ID}-${runId}.json and scripts/results/results.json`);
+log(`Leftover MON in the throwaway wallets can be returned with: pnpm sweep --wallets ${REUSE ?? runId}`);

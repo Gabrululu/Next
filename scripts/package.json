@@ -6,7 +6,8 @@
     "vector": "tsx gen-vector.ts",
     "test": "tsx test-vector.ts",
     "verify": "tsx verify.ts",
-    "stress": "tsx stress.ts"
+    "stress": "tsx stress.ts",
+    "sweep": "tsx sweep.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.7",
