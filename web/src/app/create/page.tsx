@@ -28,7 +28,7 @@ const IDEAS = ["Workshop seats", "Scholarship", "Concert tickets", "Hackathon sp
 
 const AFTER = [
   { t: "Share the link", d: "You get a campaign page. Send its link to the people you want to invite." },
-  { t: "People get in line", d: "Everyone signs in with their email and joins once. Joining early gives no advantage, so nobody needs to rush." },
+  { t: "People get in line", d: "Everyone signs in with their email or wallet and joins once. Joining early gives no advantage, so nobody needs to rush." },
   { t: "Anyone runs the draw", d: "A few seconds after it closes, anyone (you included) can press “Run the draw”. Winners claim a pass." },
 ];
 
@@ -75,7 +75,7 @@ export default function CreatePage() {
           <RoleCard tag="You" role="Organizer" accent
             text="You name the campaign, choose how long it stays open and how many people win, then share the link. You don't get in line yourself." />
           <RoleCard tag="Everyone else" role="Participants"
-            text="Anyone who opens your link and signs in with their email. One entry per account, and when they join doesn't matter." />
+            text="Anyone who opens your link and signs in with their email or wallet. One entry per account, and when they join doesn't matter." />
         </div>
       </Reveal>
 
@@ -175,7 +175,7 @@ export default function CreatePage() {
                 {!onChain ? (
                   <>
                     <ConnectButton big />
-                    <p className="text-xs text-mute">Sign in with the email you&apos;ll organize from. Network fees are covered by the app.</p>
+                    <p className="text-xs text-mute">Sign in with the email or wallet you&apos;ll organize from. With email, network fees are covered by the app.</p>
                   </>
                 ) : (
                   <button onClick={submit} disabled={!ready} className="w-full glow btn-volt rounded-2xl px-6 py-4 font-semibold text-lg active:scale-[0.98] transition-transform">

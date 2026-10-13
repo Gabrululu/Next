@@ -1,8 +1,13 @@
 "use client";
 
-// Email sign-in (Dynamic email OTP + embedded wallet). The participant's only account:
-// no wallet app, no network picker, no gas. Name kept as ConnectButton so pages didn't need changes.
-import { logout, sendEmailOTP, verifyOTP } from "@dynamic-labs-sdk/client";
+// Sign-in: email (Dynamic email OTP + embedded wallet: no wallet app, no gas) or, for people who
+// already have one, their own browser wallet (connect + verify signature; they pay their own gas).
+// Name kept as ConnectButton so pages didn't need changes.
+import {
+  connectAndVerifyWithWalletProvider, DeeplinkConnectAndVerifyUnsupportedError, logout, sendEmailOTP,
+  UserRejectedError, verifyOTP, WalletAlreadyLinkedToAnotherUserError,
+} from "@dynamic-labs-sdk/client";
+import { useGetAvailableWalletProvidersData } from "@dynamic-labs-sdk/react-hooks";
 import { createWaasWalletAccounts, getChainsMissingWaasWalletAccounts } from "@dynamic-labs-sdk/client/waas";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -49,7 +54,9 @@ export function ConnectButton({ big = false }: { big?: boolean }) {
     if (!s.account || creating) return <span className={`${cls} tactile text-mute`}>Setting up your account…</span>;
     return (
       <div className="inline-flex items-center gap-2">
-        <span className={`${cls} tactile max-w-[14rem] truncate`} title={s.email}>{s.email ?? "Signed in"}</span>
+        <span className={`${cls} tactile max-w-[14rem] truncate`} title={s.email ?? s.address}>
+          {s.email ?? (s.address ? `${s.address.slice(0, 6)}…${s.address.slice(-4)}` : "Signed in")}
+        </span>
         <button onClick={() => logout()} className="label hover:text-paper">Sign out</button>
       </div>
     );
@@ -121,6 +128,43 @@ export function EmailSignIn() {
           <button type="button" onClick={() => { setOtp(undefined); setCode(""); }} className="label hover:text-paper">Use a different email</button>
         </form>
       )}
+      {error && <p role="alert" className="text-sm text-bad">{error}</p>}
+      {!otp && <WalletSignIn />}
+    </div>
+  );
+}
+
+/** For people who already use a wallet: browser-extension EVM wallets detected by Dynamic. Hidden when none. */
+function WalletSignIn() {
+  const { data: providers = [] } = useGetAvailableWalletProvidersData();
+  const [busy, setBusy] = useState<string>();
+  const [error, setError] = useState<string>();
+  const wallets = providers.filter((p) => p.chain === "EVM" && p.walletProviderType === "browserExtension");
+  if (!wallets.length) return null;
+
+  const connect = async (key: string, name: string) => {
+    setError(undefined); setBusy(key);
+    try { await connectAndVerifyWithWalletProvider({ walletProviderKey: key }); }
+    catch (e) {
+      if (e instanceof UserRejectedError) setError(undefined);
+      else if (e instanceof WalletAlreadyLinkedToAnotherUserError) setError(`This ${name} account is already linked to another sign-in.`);
+      else if (e instanceof DeeplinkConnectAndVerifyUnsupportedError) setError("This wallet can't sign in from here. Use email instead.");
+      else setError(friendly(e));
+    } finally { setBusy(undefined); }
+  };
+
+  return (
+    <div className="space-y-2 pt-1">
+      <p className="label flex items-center gap-3 before:h-px before:flex-1 before:bg-ink-3 after:h-px after:flex-1 after:bg-ink-3">or use your wallet</p>
+      {wallets.map((w) => (
+        <button key={w.key} type="button" disabled={!!busy} onClick={() => void connect(w.key, w.metadata.displayName)}
+          className="w-full tactile rounded-xl px-4 py-3 font-semibold inline-flex items-center justify-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {w.metadata.icon && <img src={w.metadata.icon} alt="" width={20} height={20} className="rounded" />}
+          {busy === w.key ? "Check your wallet…" : w.metadata.displayName}
+        </button>
+      ))}
+      <p className="text-xs text-mute">You&apos;ll sign a message to prove it&apos;s yours (free). With your own wallet you pay the small network fee in MON.</p>
       {error && <p role="alert" className="text-sm text-bad">{error}</p>}
     </div>
   );

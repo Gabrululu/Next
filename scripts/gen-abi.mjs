@@ -15,4 +15,9 @@ if (existsSync(new URL("../web/src", import.meta.url))) {
   writeFileSync(new URL("abi.ts", web), src);
   writeFileSync(new URL("select.ts", web), "// AUTO-COPIED from scripts/lib/select.ts by scripts/gen-abi.mjs — edit the original.\n" + readFileSync(new URL("./lib/select.ts", import.meta.url), "utf8"));
 }
+const indexer = new URL("../indexer/", import.meta.url);
+if (existsSync(indexer)) {
+  mkdirSync(new URL("abis/", indexer), { recursive: true });
+  for (const n of ["Next", "NextPass"]) writeFileSync(new URL(`abis/${n}.json`, indexer), JSON.stringify(read(n), null, 2) + "\n");
+}
 console.log("ABIs written");

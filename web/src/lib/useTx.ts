@@ -16,7 +16,7 @@ type Call = { address: Address; abi: Abi; functionName: string; args?: readonly 
  * (Monad charges the full limit), only if it holds enough MON; otherwise a plain-language error.
  */
 export function useTx(onConfirmed?: (receipt: TransactionReceipt) => void) {
-  const { account } = useAccountState();
+  const { account, embedded } = useAccountState();
   const publicClient = usePublicClient();
   const [stage, setStage] = useState<string>();
   const [hash, setHash] = useState<Hex>();
@@ -34,19 +34,27 @@ export function useTx(onConfirmed?: (receipt: TransactionReceipt) => void) {
       setStage("Getting ready…");
       await ensureAppNetwork(account);
 
-      let txHash: Hex;
-      try {
-        setStage("Sending (fees covered)…");
-        ({ transactionHash: txHash } = await sendSponsoredTransaction({ walletAccount: account, calls: [{ target: call.address, data, value: 0n }] }));
-        setSponsored(true);
-      } catch (e) {
-        if (!(e instanceof SponsorTransactionError)) throw e;
+      let txHash: Hex | undefined;
+      // Sponsorship only works for Dynamic embedded wallets (docs: "V3 MPC embedded wallets only");
+      // a user's own wallet goes straight to the self-paid path.
+      if (embedded) {
+        try {
+          setStage("Sending (fees covered)…");
+          ({ transactionHash: txHash } = await sendSponsoredTransaction({ walletAccount: account, calls: [{ target: call.address, data, value: 0n }] }));
+          setSponsored(true);
+        } catch (e) {
+          if (!(e instanceof SponsorTransactionError)) throw e;
+        }
+      }
+      if (!txHash) {
         // Fallback: self-paid, explicit gas limit, only if the wallet can afford it.
-        setStage("Sending…");
+        setStage(embedded ? "Sending…" : "Confirm in your wallet…");
         const gas = ((await publicClient.estimateGas({ account: account.address as Address, to: call.address, data })) * 12n) / 10n;
         const fees = await publicClient.estimateFeesPerGas();
         const balance = await publicClient.getBalance({ address: account.address as Address });
-        if (balance < gas * fees.maxFeePerGas!) throw new Error("We couldn't cover the network fee right now. Please try again in a minute.");
+        if (balance < gas * fees.maxFeePerGas!) throw new Error(embedded
+          ? "We couldn't cover the network fee right now. Please try again in a minute."
+          : "Your wallet needs a little MON for the network fee (get some from the faucet).");
         const walletClient = await createWalletClientForWalletAccount({ walletAccount: account });
         txHash = await walletClient.sendTransaction({ to: call.address, data, gas, account: walletClient.account!, chain: walletClient.chain });
         setSponsored(false);

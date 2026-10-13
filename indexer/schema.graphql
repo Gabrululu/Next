@@ -1,0 +1,98 @@
+# Next indexer schema (https://docs.envio.dev/docs/HyperIndex/schema).
+# Ids: Campaign/CampaignStats/Draw = campaignId; Registration/Winner = "<campaignId>_<account>";
+# CampaignBlockStat = "<campaignId>_<blockNumber>"; Pass = tokenId; GlobalStats = "global".
+
+type Campaign {
+  id: ID!
+  campaignId: BigInt! @index
+  organizer: String! @index
+  name: String!
+  slots: Int!
+  openAt: BigInt!
+  closeAt: BigInt!
+  drawBlock: BigInt!
+  createdBlock: BigInt!
+  createdAt: Int!
+  createdTx: String!
+  registrantCount: Int!
+  drawn: Boolean!
+  seed: String
+  winnerCount: Int!
+  claimedCount: Int!
+  recommitCount: Int!
+  registrations: [Registration!]! @derivedFrom(field: "campaign")
+  winners: [Winner!]! @derivedFrom(field: "campaign")
+  blockStats: [CampaignBlockStat!]! @derivedFrom(field: "campaign")
+}
+
+type Registration {
+  id: ID!
+  campaign: Campaign!
+  account: String! @index
+  "0-based arrival position (has no effect on the draw)"
+  index: Int! @index
+  blockNumber: BigInt! @index
+  timestamp: Int!
+  txHash: String!
+}
+
+type Draw {
+  id: ID!
+  campaign: Campaign!
+  seed: String!
+  winnerCount: Int!
+  blockNumber: BigInt!
+  timestamp: Int!
+  txHash: String!
+}
+
+type Winner {
+  id: ID!
+  campaign: Campaign!
+  account: String! @index
+  "1-based pick order"
+  rank: Int! @index
+  claimed: Boolean!
+  blockNumber: BigInt!
+}
+
+type Pass {
+  id: ID!
+  tokenId: BigInt!
+  campaign: Campaign!
+  account: String! @index
+  blockNumber: BigInt!
+  timestamp: Int!
+  txHash: String!
+}
+
+"Registrations landed in one block for one campaign (feeds the live stress panel)."
+type CampaignBlockStat {
+  id: ID!
+  campaign: Campaign!
+  blockNumber: BigInt! @index
+  timestamp: Int!
+  registrations: Int!
+}
+
+"Per-campaign throughput aggregates."
+type CampaignStats {
+  id: ID!
+  campaign: Campaign!
+  registrations: Int!
+  blocksWithRegistrations: Int!
+  maxPerBlock: Int!
+  firstBlock: BigInt
+  lastBlock: BigInt
+  firstTimestamp: Int
+  lastTimestamp: Int
+}
+
+type GlobalStats {
+  id: ID!
+  campaigns: Int!
+  registrations: Int!
+  draws: Int!
+  winners: Int!
+  passes: Int!
+}

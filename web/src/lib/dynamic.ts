@@ -21,9 +21,14 @@ function create(): DynamicClient | null {
       ...(typeof window !== "undefined" ? { universalLink: window.location.origin } : {}),
     },
   });
-  addEvmExtension();
-  addWaasEvmExtension(); // Dynamic embedded (WaaS) EVM wallets: the participant's only account
-  if (typeof window !== "undefined") void initializeClient(client);
+  // Extensions touch `window`, so they (and initialization) run only in the browser. On the server the
+  // client stays uninitialized: hooks report `useInitStatus() !== "finished"`, the UI renders its
+  // signed-out placeholder, and the browser initializes after hydration (no SSR/client mismatch).
+  if (typeof window !== "undefined") {
+    addEvmExtension();
+    addWaasEvmExtension(); // Dynamic embedded (WaaS) EVM wallets: the participant's only account
+    void initializeClient(client);
+  }
   return client;
 }
 

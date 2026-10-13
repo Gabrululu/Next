@@ -12,13 +12,15 @@ import { Reveal } from "@/components/Reveal";
 import { Stage } from "@/components/Stage";
 import { BLOCK_MS, fmtDuration, useCampaign, type Phase } from "@/lib/campaign";
 import { LEGACY_NEXT_ADDRESS, contractQuery, explorerAddress, explorerBlock, explorerTx, hasLegacy, appChain, resolveContract, short } from "@/lib/config";
+import { useRecentJoins } from "@/lib/envio";
 import { nextAbi } from "@/lib/shared/abi";
+import type { Address } from "viem";
 import { useTx } from "@/lib/useTx";
 
 const PHASE_LABEL: Record<Phase, string> = {
-  upcoming: "Not open yet",
-  open: "Open — get in line",
-  sealing: "Closed — waiting for seed block",
+  upcoming: "Opens soon",
+  open: "Open — join now",
+  sealing: "Closed — draw coming up",
   drawable: "Ready to draw",
   drawn: "Drawn",
 };
@@ -66,6 +68,11 @@ export default function CampaignPage({ params, searchParams }: { params: Promise
 
   const count = Number(registrants ?? 0n);
   const isOrganizer = !!address && address.toLowerCase() === c.organizer.toLowerCase();
+  // Plain-language personal state (spec): Registered · Waiting for the draw · You won · Not this time
+  const myState: MyState | undefined = !isConnected || isOrganizer || !registered.data ? undefined
+    : phase === "drawn" ? (winner.data ? "You won" : "Not this time")
+    : phase === "open" || phase === "upcoming" ? "Registered"
+    : "Waiting for the draw";
   const openProgress = (now / 1000 - Number(c.openAt)) / Math.max(1, Number(c.closeAt) - Number(c.openAt));
   const target =
     phase === "upcoming" ? Number(c.openAt) * 1000 - now :
@@ -84,6 +91,7 @@ export default function CampaignPage({ params, searchParams }: { params: Promise
         <span className="label">Campaign #{id.toString()}</span>
         <StatusPill phase={phase!} />
         {isConnected && <RolePill organizer={isOrganizer} />}
+        {myState && <MyStatePill state={myState} />}
       </div>
       <h1 className={`${c.name.length > 26 ? "t-h2" : "t-hero"} font-display font-extrabold break-words word-in`}>{c.name}</h1>
       <p className="mt-5 t-lead text-mute">
@@ -120,6 +128,7 @@ export default function CampaignPage({ params, searchParams }: { params: Promise
                 {count === 0 && <p className="label mt-2">Nobody in line yet. Share the link.</p>}
                 {count > 400 && <p className="label mt-2">Showing 400 of {count}</p>}
               </div>
+              <RecentJoins contract={contract} id={id} me={address} />
             </section>
           </Stage>
         </Reveal>
@@ -146,10 +155,10 @@ export default function CampaignPage({ params, searchParams }: { params: Promise
                   </>
                 ) :
                 registered.data ? (
-                  <Big title="You're in line." body="Arrival order doesn't matter. Come back after the draw." />
+                  <Big title="Registered." body="You're in line. When you joined doesn't matter: the draw happens after the window closes, and this page will show your result." />
                 ) : (
                   <>
-                    <Big title="Get in line." body="One entry per address. Registering early gives no advantage." />
+                    <Big title="Get in line." body="One entry per account. Joining early gives no advantage." />
                     <ActionButton t={reg} onClick={() => write("register", reg)} label="Register" />
                   </>
                 )
@@ -157,7 +166,7 @@ export default function CampaignPage({ params, searchParams }: { params: Promise
 
               {phase === "sealing" && (
                 <Big
-                  title="Window closed."
+                  title={registered.data ? "Waiting for the draw." : "Window closed."}
                   body={`Waiting for seed block #${c.drawBlock} (announced when the campaign was created). ${blocksToSeed !== undefined && blocksToSeed >= 0 ? `${blocksToSeed + 1} blocks to go.` : ""}`}
                 />
               )}
@@ -165,13 +174,13 @@ export default function CampaignPage({ params, searchParams }: { params: Promise
               {phase === "drawable" && (
                 seedExpired ? (
                   <>
-                    <Big title="Seed block aged out." body="Its hash is no longer readable (past BLOCKHASH and EIP-2935 windows). Anyone can announce a new future seed block." />
+                    <Big title="The draw window expired." body="Nobody ran the draw in time, so its random seed can't be read anymore. Anyone can set a new one (still unknown to everyone) and then run the draw." />
                     {legacy ? <p className="text-sm text-mute">This campaign is on the previous contract version, which this app no longer writes to.</p>
-                      : onChain ? <ActionButton t={resched} onClick={() => write("recommit", resched)} label="Announce new seed block" /> : <ConnectButton big />}
+                      : onChain ? <ActionButton t={resched} onClick={() => write("recommit", resched)} label="Set a new seed" /> : <ConnectButton big />}
                   </>
                 ) : (
                   <>
-                    <Big title="Seed block is in." body="Anyone can run the draw. The result depends only on the seed block's hash, not on who calls or when." />
+                    <Big title={registered.data ? "Waiting for the draw." : "The draw is ready."} body="Anyone can press the button below. The result is the same no matter who presses it or when." />
                     {onChain ? <ActionButton t={draw} onClick={() => write("draw", draw)} label="Run the draw" /> : <ConnectButton big />}
                   </>
                 )
@@ -180,14 +189,17 @@ export default function CampaignPage({ params, searchParams }: { params: Promise
               {phase === "drawn" && (
                 <>
                   {!isConnected ? (
-                    <Big title="The draw is done." body="Sign in to see whether you're in." />
+                    <>
+                      <Big title="The draw is done." body="Sign in with the email or wallet you joined with to see your result." />
+                      <ConnectButton big />
+                    </>
                   ) : winner.data ? (
                     <>
-                      <Big title="You're in. 🎟" body={claimed.data ? "Pass claimed and recorded on-chain." : "Claim your pass to record it on-chain."} accent />
+                      <Big title="You won." body={claimed.data ? "Your pass is claimed. It's tied to your account and can't be transferred." : "Claim your pass to secure your spot."} accent />
                       {!claimed.data && onChain && <ActionButton t={claim} onClick={() => write("claim", claim)} label="Claim pass" />}
                     </>
                   ) : registered.data ? (
-                    <Big title="Not this time." body={`${Math.min(c.slots, count)} of ${count} were picked. The draw is verifiable below.`} />
+                    <Big title="Not this time." body={`${Math.min(c.slots, count)} of ${count} people in line won. You can check the draw yourself below.`} />
                   ) : isOrganizer ? (
                     <Big title="Your campaign is drawn." body={`${Math.min(c.slots, count)} of ${count} people in line won. Share the verify link so anyone can check the result.`} />
                   ) : (
@@ -254,6 +266,27 @@ export default function CampaignPage({ params, searchParams }: { params: Promise
   );
 }
 
+/** Latest arrivals, from the Envio indexer. Hidden when the indexer doesn't cover this contract or is down. */
+function RecentJoins({ contract, id, me }: { contract: Address; id: bigint; me?: Address }) {
+  const joins = useRecentJoins(contract, id);
+  if (!joins?.length) return null;
+  return (
+    <div className="mt-8 border-t border-line pt-5">
+      <p className="label">Latest in line · via Envio</p>
+      <ul className="mt-3 space-y-1.5 font-mono text-sm">
+        {joins.map((j) => (
+          <li key={j.index} className="flex items-center justify-between gap-3">
+            <span className={me && j.account === me.toLowerCase() ? "text-volt-2" : "text-paper"}>
+              #{j.index + 1} {short(j.account)}{me && j.account === me.toLowerCase() ? " (you)" : ""}
+            </span>
+            <span className="text-mute">block {j.blockNumber}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function LegacyNote() {
   return (
     <p className="mb-6 rounded-2xl border border-line px-4 py-3 text-sm text-mute">
@@ -262,6 +295,13 @@ function LegacyNote() {
       It is still live and verifiable.
     </p>
   );
+}
+
+type MyState = "Registered" | "Waiting for the draw" | "You won" | "Not this time";
+
+function MyStatePill({ state }: { state: MyState }) {
+  const tone = state === "You won" ? "bg-ok text-ink" : state === "Not this time" ? "bg-ink-3 text-mute" : "border border-volt text-volt-2";
+  return <span role="status" className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${tone}`}>{state}</span>;
 }
 
 function RolePill({ organizer }: { organizer: boolean }) {

@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+# Envio HyperIndex for Next (https://docs.envio.dev/docs/HyperIndex/configuration-file).
+# Addresses and start block come from ENVIO_* env vars (Envio Cloud only exposes ENVIO_-prefixed vars);
+# the defaults are the Monad testnet v3 deployment. Data source: HyperSync (https://10143.hypersync.xyz),
+# with the Monad RPC as fallback.
+name: next-indexer
+description: Next fair-access protocol (campaigns, registrations, draws, winners, soulbound passes)
+disable_default_cross_chain: true
+contracts:
+  - name: Next
+    abi_file_path: ./abis/Next.json
+    events:
+      - event: CampaignCreated
+      - event: Registered
+      - event: Drawn
+      - event: Winner
+      - event: Recommitted
+      - event: Claimed
+  - name: NextPass
+    abi_file_path: ./abis/NextPass.json
+    events:
+      - event: PassMinted
+chains:
+  - id: 10143 # Monad testnet
+    start_block: ${ENVIO_START_BLOCK:-70322943} # block of the v3 deploy (Next + NextPass in one tx)
+    rpc:
+      - url: ${ENVIO_RPC_URL:-https://testnet-rpc.monad.xyz}
+        for: fallback
+    contracts:
+      - name: Next
+        address: ${ENVIO_NEXT_ADDRESS:-0x21b0b22Bc33b8476cD9491Efd23F8A08EE560D1A}
+      - name: NextPass
+        address: ${ENVIO_NEXT_PASS_ADDRESS:-0xf1A233D44a0Cc2354c4401996edd3379F7025aAd}

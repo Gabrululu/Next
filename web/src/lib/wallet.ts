@@ -5,6 +5,7 @@
 // sendEmailOTP -> verifyOTP -> createWaasWalletAccounts -> switch network (NetworkNotAddedError -> addNetwork)
 // -> sendSponsoredTransaction (gas paid by the app via Dynamic) or a viem WalletClient.
 import { addNetwork, NetworkNotAddedError, switchActiveNetwork } from "@dynamic-labs-sdk/client";
+import { isWaasWalletAccount } from "@dynamic-labs-sdk/client/waas";
 import { isEvmWalletAccount, type EvmWalletAccount } from "@dynamic-labs-sdk/evm";
 import { useGetWalletAccounts, useInitStatus, useUser } from "@dynamic-labs-sdk/react-hooks";
 import type { Address } from "viem";
@@ -24,9 +25,11 @@ export type AccountState = {
   /** Kept for compatibility with pages: the app chain once signed in (network is switched before each tx). */
   chainId?: number;
   account?: EvmWalletAccount;
+  /** true = Dynamic embedded wallet (email sign-in, gas sponsored); false = the user's own wallet (pays its own gas). */
+  embedded: boolean;
 };
 
-const DISABLED: AccountState = { configured: false, ready: true, isConnected: false, signedIn: false };
+const DISABLED: AccountState = { configured: false, ready: true, isConnected: false, signedIn: false, embedded: false };
 
 /**
  * dynamicClient is a module constant (null when unconfigured), so the branch below is identical on
@@ -42,7 +45,10 @@ function useDynamicAccountState(): AccountState {
   const { data: init } = useInitStatus();
   const { data: user } = useUser();
   const { data: accounts } = useGetWalletAccounts();
-  const account = accounts?.find(isEvmWalletAccount);
+  const evm = accounts?.filter(isEvmWalletAccount) ?? [];
+  // A wallet the user connected themselves wins over the embedded one: they chose to act with it.
+  const account = evm.find((a) => !isWaasWalletAccount({ walletAccount: a })) ?? evm[0];
+  const embedded = !!account && isWaasWalletAccount({ walletAccount: account });
   const email = (user as { email?: string | null } | null | undefined)?.email ?? undefined;
   return {
     configured: true,
@@ -53,6 +59,7 @@ function useDynamicAccountState(): AccountState {
     address: account?.address as Address | undefined,
     chainId: account ? appChain.id : undefined,
     account,
+    embedded,
   };
 }
 

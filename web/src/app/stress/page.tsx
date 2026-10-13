@@ -1,3 +1,4 @@
+import { LivePanel } from "@/components/LivePanel";
 import { Reveal } from "@/components/Reveal";
 import { StressPanel } from "@/components/StressPanel";
 import { Terminal } from "@/components/Terminal";
@@ -25,6 +26,14 @@ export default function StressPage() {
       </p>
 
       <Reveal delay={150} className="mt-14"><StressPanel /></Reveal>
+
+      {process.env.NEXT_PUBLIC_ENVIO_GRAPHQL_URL && (
+      <section aria-labelledby="live-h" className="mt-16">
+        <Reveal><h2 id="live-h" className="t-h2 font-display font-extrabold">Right now</h2></Reveal>
+        <Reveal delay={80}><p className="mt-4 text-mute max-w-[52ch]">Live counters from the Envio indexer, which reads every Next event on {CHAIN_NAME} as it lands.</p></Reveal>
+        <Reveal delay={120} className="mt-8"><LivePanel /></Reveal>
+      </section>
+      )}
 
       <section aria-labelledby="method-h" className="mt-24">
         <Reveal><h2 id="method-h" className="t-h2 font-display font-extrabold">How it was measured</h2></Reveal>
