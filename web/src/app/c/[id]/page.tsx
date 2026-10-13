@@ -6,6 +6,7 @@ import { use, useEffect, useState } from "react";
 import { useReadContract, useReadContracts } from "wagmi";
 import { useAccountState } from "@/lib/wallet";
 import { ConnectButton } from "@/components/ConnectButton";
+import { NotifyToggle } from "@/components/NotifyToggle";
 import { PhaseTrack } from "@/components/PhaseTrack";
 import { QueueDots } from "@/components/QueueDots";
 import { Reveal } from "@/components/Reveal";
@@ -30,7 +31,7 @@ export default function CampaignPage({ params, searchParams }: { params: Promise
   const { address: contract, legacy } = resolveContract(use(searchParams).contract);
   const id = /^\d+$/.test(raw) ? BigInt(raw) : 0n;
   const { campaign: c, phase, registrants, block, now, blocksToSeed, error, isLoading, refetch } = useCampaign(id, contract);
-  const { address, isConnected, chainId } = useAccountState();
+  const { address, isConnected, chainId, email } = useAccountState();
   const onChain = isConnected && chainId === appChain.id;
 
   const me = { query: { enabled: !!address && id > 0n, refetchInterval: 2000 } } as const;
@@ -210,6 +211,8 @@ export default function CampaignPage({ params, searchParams }: { params: Promise
               )}
             </motion.div>
           </AnimatePresence>
+
+          {!legacy && email && registered.data && phase !== "drawn" && <NotifyToggle campaignId={id} email={email} />}
 
           <dl className="mt-auto grid grid-cols-2 gap-3 text-sm border-t border-line pt-5">
             <div><dt className="label">Opens</dt><dd>{new Date(Number(c.openAt) * 1000).toLocaleTimeString()}</dd></div>
