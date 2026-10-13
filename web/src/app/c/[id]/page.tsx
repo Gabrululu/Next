@@ -206,6 +206,12 @@ export default function CampaignPage({ params, searchParams }: { params: Promise
                   ) : (
                     <Big title="The draw is done." body="This account wasn't in line." />
                   )}
+                  {!legacy && winner.data && claimed.data && (
+                    <Link href={`/pass/${id}`} className="glow btn-volt rounded-2xl px-5 py-3 text-center font-semibold">Show my pass QR</Link>
+                  )}
+                  {!legacy && isOrganizer && (
+                    <Link href={`/scan/${id}`} className="glow tactile rounded-2xl px-5 py-3 text-center font-semibold">Check people in (scan passes)</Link>
+                  )}
                   <Link href={`/verify/${id}${contractQuery(contract)}`} className="glow rounded-2xl border border-line px-5 py-3 text-center font-semibold">Verify this draw →</Link>
                 </>
               )}
