@@ -7,15 +7,16 @@ import { useEffect, useState } from "react";
 import { ConnectButton } from "./ConnectButton";
 import { Logo } from "./Logo";
 import { CHAIN_NAME } from "@/lib/config";
+import { LocaleToggle, useT } from "@/lib/i18n";
 
 const links = [
   { href: "/create", label: "Create", hint: "Open a window" },
-  { href: "/stress", label: "Stress test", hint: "Recorded testnet run" },
-  { href: "/#how", label: "How it works", hint: "Four steps" },
+  { href: "/#how", label: "How it works", hint: "Five steps" },
 ];
 
 export function Nav() {
   const path = usePathname();
+  const t = useT();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [path]);
 
@@ -33,14 +34,14 @@ export function Nav() {
                 <li key={l.href}>
                   <Link href={l.href} aria-current={path === l.href ? "page" : undefined}
                     className="text-mute hover:text-paper aria-[current=page]:text-paper transition-colors">
-                    {l.label}
+                    {t(l.label)}
                   </Link>
                 </li>
               ))}
             </ul>
             <button
               className="md:hidden grid place-items-center size-9 rounded-lg hover:bg-ink-3"
-              aria-label={open ? "Close menu" : "Open menu"}
+              aria-label={open ? t("Close menu") : t("Open menu")}
               aria-expanded={open}
               aria-controls="mobile-menu"
               onClick={() => setOpen((o) => !o)}
@@ -67,13 +68,14 @@ export function Nav() {
                     <li key={l.href} className="border-b border-line last:border-0">
                       <Link href={l.href} className="flex items-center justify-between py-3 px-2">
                         <motion.span initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * i }}>
-                          {l.label}
+                          {t(l.label)}
                         </motion.span>
-                        <span className="label">{l.hint}</span>
+                        <span className="label">{t(l.hint)}</span>
                       </Link>
                     </li>
                   ))}
                 </ul>
+                <div className="pt-3 flex items-center justify-between gap-3"><span className="label">{t("Language")}</span><LocaleToggle /></div>
                 <div className="pt-3"><ConnectButton big /></div>
               </motion.div>
             )}
@@ -83,6 +85,7 @@ export function Nav() {
         {/* right pill: network + wallet */}
         <div className="pointer-events-auto hidden md:flex items-center gap-3 rounded-2xl tactile backdrop-blur pl-4 pr-2 py-2">
           <span className="label flex items-center gap-2"><span className="size-1.5 rounded-full bg-ok" aria-hidden />{CHAIN_NAME}</span>
+          <LocaleToggle />
           <ConnectButton />
         </div>
       </div>

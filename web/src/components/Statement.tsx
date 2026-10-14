@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from "framer-motion";
+import { useT } from "@/lib/i18n";
 import { useRef, type ReactNode } from "react";
 
 /* ---------- tiny inline chips (decorative, our own visuals) ---------- */
@@ -41,10 +42,11 @@ function DialChip() {
 
 function HashChip() {
   return (
-    <Chip label="a block hash">
-      <span className="font-mono font-bold text-[0.34em] leading-none text-volt-2">
-        0x<span className="chip-caret">_</span>
-      </span>
+    <Chip label="a die">
+      <svg viewBox="0 0 24 24" className="size-[0.55em]" aria-hidden>
+        <rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="var(--color-volt)" strokeWidth="2.2" />
+        {[[8.5, 8.5], [15.5, 8.5], [12, 12], [8.5, 15.5], [15.5, 15.5]].map(([cx, cy]) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.6" fill="var(--color-volt-2)" />)}
+      </svg>
     </Chip>
   );
 }
@@ -64,7 +66,7 @@ function CheckChip() {
 type Piece = string | ReactNode;
 const PIECES: Piece[] = [
   "Everyone", <DotsChip key="d" />, "gets in line.", "The window", <DialChip key="w" />, "closes on time.",
-  "A public seed", <HashChip key="h" />, "picks who's in.", "And anyone", <CheckChip key="c" />, "can check the math.",
+  "A fair draw", <HashChip key="h" />, "picks who's in.", "And anyone", <CheckChip key="c" />, "can check it.",
 ];
 
 function Word({ children, progress, range }: { children: ReactNode; progress: MotionValue<number>; range: [number, number] }) {
@@ -73,21 +75,22 @@ function Word({ children, progress, range }: { children: ReactNode; progress: Mo
 }
 
 export function Statement() {
+  const t = useT();
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.85", "end 0.55"] });
 
   // flatten into words so each one lights up in sequence
-  const tokens: Piece[] = PIECES.flatMap((p) => (typeof p === "string" ? p.split(" ").flatMap((w) => [w, " "]) : [p, " "]));
+  const tokens: Piece[] = PIECES.flatMap((p) => (typeof p === "string" ? t(p).split(" ").flatMap((w) => [w, " "]) : [p, " "]));
   const total = tokens.length;
 
   return (
-    <section ref={ref} aria-label="What Next does" className="mx-auto max-w-6xl px-4 sm:px-6 py-28 md:py-44">
+    <section ref={ref} aria-label={t("What Next does")} className="mx-auto max-w-6xl px-4 sm:px-6 py-28 md:py-44">
       <h2 className="t-h2 font-display font-bold text-center max-w-[22ch] mx-auto">
         {reduce
           ? tokens
-          : tokens.map((t, i) => (t === " " ? " " : (
-            <Word key={i} progress={scrollYProgress} range={[i / total, Math.min(1, (i + 2) / total)]}>{t}</Word>
+          : tokens.map((tok, i) => (tok === " " ? " " : (
+            <Word key={i} progress={scrollYProgress} range={[i / total, Math.min(1, (i + 2) / total)]}>{tok}</Word>
           )))}
       </h2>
     </section>

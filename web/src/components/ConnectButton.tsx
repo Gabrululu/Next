@@ -12,6 +12,7 @@ import { createWaasWalletAccounts, getChainsMissingWaasWalletAccounts } from "@d
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useAccountState } from "@/lib/wallet";
+import { useT } from "@/lib/i18n";
 
 type OtpVerification = Awaited<ReturnType<typeof sendEmailOTP>>;
 
@@ -23,6 +24,7 @@ async function ensureEmbeddedWallet() {
 
 export function ConnectButton({ big = false }: { big?: boolean }) {
   const s = useAccountState();
+  const t = useT();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -47,17 +49,17 @@ export function ConnectButton({ big = false }: { big?: boolean }) {
   }, [open]);
 
   const cls = `${big ? "px-6 py-3 text-base w-full sm:w-auto" : "px-4 py-2 text-sm"} rounded-2xl font-semibold transition-transform active:scale-[0.97]`;
-  if (!mounted || !s.ready) return <span className={`${cls} tactile opacity-0`} aria-hidden>Sign in</span>;
-  if (!s.configured) return <span className="text-xs text-mute">Sign-in not configured (NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID)</span>;
+  if (!mounted || !s.ready) return <span className={`${cls} tactile opacity-0`} aria-hidden>{t("Sign in")}</span>;
+  if (!s.configured) return <span className="text-xs text-mute">{t("Sign-in not configured")} (NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID)</span>;
 
   if (s.signedIn) {
-    if (!s.account || creating) return <span className={`${cls} tactile text-mute`}>Setting up your account…</span>;
+    if (!s.account || creating) return <span className={`${cls} tactile text-mute`}>{t("Setting up your account…")}</span>;
     return (
       <div className="inline-flex items-center gap-2">
         <span className={`${cls} tactile max-w-[14rem] truncate`} title={s.email ?? s.address}>
-          {s.email ?? (s.address ? `${s.address.slice(0, 6)}…${s.address.slice(-4)}` : "Signed in")}
+          {s.email ?? (s.address ? `${s.address.slice(0, 6)}…${s.address.slice(-4)}` : t("Signed in"))}
         </span>
-        <button onClick={() => logout()} className="label hover:text-paper">Sign out</button>
+        <button onClick={() => logout()} className="label hover:text-paper">{t("Sign out")}</button>
       </div>
     );
   }
@@ -65,7 +67,7 @@ export function ConnectButton({ big = false }: { big?: boolean }) {
   if (big) return <EmailSignIn />;
   return (
     <div ref={ref} className="relative inline-block">
-      <button className={`${cls} glow btn-volt`} aria-expanded={open} onClick={() => setOpen((o) => !o)}>Sign in</button>
+      <button className={`${cls} glow btn-volt`} aria-expanded={open} onClick={() => setOpen((o) => !o)}>{t("Sign in")}</button>
       <AnimatePresence>
         {open && (
           <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}
@@ -80,6 +82,7 @@ export function ConnectButton({ big = false }: { big?: boolean }) {
 
 /** Two steps: email -> 6-digit code. Plain language, no wallet jargon. */
 export function EmailSignIn() {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [otp, setOtp] = useState<OtpVerification>();
@@ -87,20 +90,20 @@ export function EmailSignIn() {
   const [error, setError] = useState<string>();
 
   const sendCode = async () => {
-    setError(undefined); setBusy("Sending code…");
+    setError(undefined); setBusy(t("Sending code…"));
     try { setOtp(await sendEmailOTP({ email: email.trim() })); }
-    catch (e) { setError(friendly(e)); }
+    catch (e) { setError(friendly(e, t)); }
     finally { setBusy(undefined); }
   };
 
   const verify = async () => {
     if (!otp) return;
-    setError(undefined); setBusy("Checking code…");
+    setError(undefined); setBusy(t("Checking code…"));
     try {
       await verifyOTP({ otpVerification: otp, verificationToken: code.trim() });
-      setBusy("Setting up your account…");
+      setBusy(t("Setting up your account…"));
       await ensureEmbeddedWallet(); // wait for it before anything reads the address (Monad recipe)
-    } catch (e) { setError(friendly(e)); }
+    } catch (e) { setError(friendly(e, t)); }
     finally { setBusy(undefined); }
   };
 
@@ -109,23 +112,23 @@ export function EmailSignIn() {
     <div className="space-y-3 text-left">
       {!otp ? (
         <form onSubmit={(e) => { e.preventDefault(); void sendCode(); }} className="space-y-3">
-          <label htmlFor="signin-email" className="label block">Sign in with your email</label>
-          <input id="signin-email" type="email" required autoComplete="email" inputMode="email" placeholder="you@example.com"
+          <label htmlFor="signin-email" className="label block">{t("Sign in with your email")}</label>
+          <input id="signin-email" type="email" required autoComplete="email" inputMode="email" placeholder={t("you@example.com")}
             value={email} onChange={(e) => setEmail(e.target.value)} className={input} />
           <button type="submit" disabled={!!busy || !email.includes("@")} className="w-full glow btn-volt rounded-xl px-4 py-3 font-semibold">
-            {busy ?? "Email me a code"}
+            {busy ?? t("Email me a code")}
           </button>
-          <p className="text-xs text-mute">We&apos;ll send a 6-digit code. No password, no app to install.</p>
+          <p className="text-xs text-mute">{t("We'll send a 6-digit code. No password, no app to install.")}</p>
         </form>
       ) : (
         <form onSubmit={(e) => { e.preventDefault(); void verify(); }} className="space-y-3">
-          <label htmlFor="signin-code" className="label block">Enter the code sent to {email}</label>
+          <label htmlFor="signin-code" className="label block">{t("Enter the code sent to {email}", { email })}</label>
           <input id="signin-code" required autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]*" maxLength={6} placeholder="123456"
             value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} className={`${input} font-mono tracking-[0.4em] text-lg`} />
           <button type="submit" disabled={!!busy || code.length < 6} className="w-full glow btn-volt rounded-xl px-4 py-3 font-semibold">
-            {busy ?? "Continue"}
+            {busy ?? t("Continue")}
           </button>
-          <button type="button" onClick={() => { setOtp(undefined); setCode(""); }} className="label hover:text-paper">Use a different email</button>
+          <button type="button" onClick={() => { setOtp(undefined); setCode(""); }} className="label hover:text-paper">{t("Use a different email")}</button>
         </form>
       )}
       {error && <p role="alert" className="text-sm text-bad">{error}</p>}
@@ -136,6 +139,7 @@ export function EmailSignIn() {
 
 /** For people who already use a wallet: browser-extension EVM wallets detected by Dynamic. Hidden when none. */
 function WalletSignIn() {
+  const t = useT();
   const { data: providers = [] } = useGetAvailableWalletProvidersData();
   const [busy, setBusy] = useState<string>();
   const [error, setError] = useState<string>();
@@ -147,31 +151,31 @@ function WalletSignIn() {
     try { await connectAndVerifyWithWalletProvider({ walletProviderKey: key }); }
     catch (e) {
       if (e instanceof UserRejectedError) setError(undefined);
-      else if (e instanceof WalletAlreadyLinkedToAnotherUserError) setError(`This ${name} account is already linked to another sign-in.`);
-      else if (e instanceof DeeplinkConnectAndVerifyUnsupportedError) setError("This wallet can't sign in from here. Use email instead.");
-      else setError(friendly(e));
+      else if (e instanceof WalletAlreadyLinkedToAnotherUserError) setError(t("This {name} account is already linked to another sign-in.", { name }));
+      else if (e instanceof DeeplinkConnectAndVerifyUnsupportedError) setError(t("This wallet can't sign in from here. Use email instead."));
+      else setError(friendly(e, t));
     } finally { setBusy(undefined); }
   };
 
   return (
     <div className="space-y-2 pt-1">
-      <p className="label flex items-center gap-3 before:h-px before:flex-1 before:bg-ink-3 after:h-px after:flex-1 after:bg-ink-3">or use your wallet</p>
+      <p className="label flex items-center gap-3 before:h-px before:flex-1 before:bg-ink-3 after:h-px after:flex-1 after:bg-ink-3">{t("or use your wallet")}</p>
       {wallets.map((w) => (
         <button key={w.key} type="button" disabled={!!busy} onClick={() => void connect(w.key, w.metadata.displayName)}
           className="w-full tactile rounded-xl px-4 py-3 font-semibold inline-flex items-center justify-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {w.metadata.icon && <img src={w.metadata.icon} alt="" width={20} height={20} className="rounded" />}
-          {busy === w.key ? "Check your wallet…" : w.metadata.displayName}
+          {busy === w.key ? t("Check your wallet…") : w.metadata.displayName}
         </button>
       ))}
-      <p className="text-xs text-mute">You&apos;ll sign a message to prove it&apos;s yours (free). With your own wallet you pay the small network fee in MON.</p>
+      <p className="text-xs text-mute">{t("You'll sign a message to prove it's yours (free). With your own wallet you pay the small network fee in MON.")}</p>
       {error && <p role="alert" className="text-sm text-bad">{error}</p>}
     </div>
   );
 }
 
-function friendly(e: unknown) {
+function friendly(e: unknown, t: (s: string) => string) {
   const msg = (e as Error)?.message ?? String(e);
-  if (/invalid|incorrect|expired/i.test(msg)) return "That code didn't work. Check it or ask for a new one.";
+  if (/invalid|incorrect|expired/i.test(msg)) return t("That code didn't work. Check it or ask for a new one.");
   return msg.split("\n")[0];
 }

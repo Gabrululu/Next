@@ -14,6 +14,7 @@ import { NEXT_ADDRESS, explorerTx, isConfigured, appChain, short } from "@/lib/c
 import { BLOCK_MS, fmtInt } from "@/lib/campaign";
 import { nextAbi } from "@/lib/shared/abi";
 import { useTx } from "@/lib/useTx";
+import { useT } from "@/lib/i18n";
 
 const STOPS = [
   { value: 60, label: "1m", words: "1 minute" }, { value: 120, label: "2m", words: "2 minutes" },
@@ -34,6 +35,7 @@ const AFTER = [
 
 export default function CreatePage() {
   const router = useRouter();
+  const t = useT();
   const reduce = useReducedMotion();
   const { address, isConnected, chainId } = useAccountState();
   const [name, setName] = useState("");
@@ -45,7 +47,7 @@ export default function CreatePage() {
   });
 
   const windowSec = STOPS[stop].value;
-  const windowText = STOPS[stop].words;
+  const windowText = t(STOPS[stop].words);
   const trimmed = name.trim();
   const bytes = new TextEncoder().encode(trimmed).length;
   const valid = trimmed.length > 0 && bytes <= 64;
@@ -63,76 +65,74 @@ export default function CreatePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-16 sm:pt-24 pb-10">
-      <Reveal><p className="label">New campaign · for organizers</p></Reveal>
+      <Reveal><p className="label">{t("New campaign · for organizers")}</p></Reveal>
       <h1 className="t-hero font-display font-extrabold mt-5">
-        <span className="word-in inline-block">Run a fair draw.</span>{" "}
-        <span className="word-in inline-block text-mute" style={{ animationDelay: "120ms" }}>In three steps.</span>
+        <span className="word-in inline-block">{t("Run a fair draw.")}</span>{" "}
+        <span className="word-in inline-block text-mute" style={{ animationDelay: "120ms" }}>{t("In three steps.")}</span>
       </h1>
 
       {/* who does what */}
       <Reveal delay={120} className="mt-10">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2" aria-label="Roles">
-          <RoleCard tag="You" role="Organizer" accent
-            text="You name the campaign, choose how long it stays open and how many people win, then share the link. You don't get in line yourself." />
-          <RoleCard tag="Everyone else" role="Participants"
-            text="Anyone who opens your link and signs in with their email or wallet. One entry per account, and when they join doesn't matter." />
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2" aria-label={t("Roles")}>
+          <RoleCard tag={t("You")} role={t("Organizer")} accent
+            text={t("You name the campaign, choose how long it stays open and how many people win, then share the link. You don't get in line yourself.")} />
+          <RoleCard tag={t("Everyone else")} role={t("Participants")}
+            text={t("Anyone who opens your link and signs in with their email or wallet. One entry per account, and when they join doesn't matter.")} />
         </div>
       </Reveal>
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.35fr_1fr] items-start">
         {/* the three steps */}
         <Reveal>
-          <section aria-label="Campaign settings" className="rounded-[2rem] tactile p-5 sm:p-8 space-y-4">
-            <Step n={1} title="What are people lining up for?" hint="This is the title people see when they open your link.">
+          <section aria-label={t("Campaign settings")} className="rounded-[2rem] tactile p-5 sm:p-8 space-y-4">
+            <Step n={1} title={t("What are people lining up for?")} hint={t("This is the title people see when they open your link.")} stepLabel={t("Step")}>
               <div className="flex items-baseline justify-end mb-2">
                 <span className={`label tabular-nums ${bytes > 64 ? "text-bad" : ""}`} aria-live="polite">{bytes}/64</span>
               </div>
               <input
                 id="name"
-                aria-label="Campaign name"
+                aria-label={t("Campaign name")}
                 value={name}
                 maxLength={64}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Saturday workshop"
+                placeholder={t("e.g. Saturday workshop")}
                 autoComplete="off"
                 className="w-full rounded-2xl tactile-pressed px-5 py-4 t-h3 font-display font-bold placeholder:text-mute/40 outline-none focus:ring-2 focus:ring-volt"
               />
-              <div className="mt-3 flex flex-wrap gap-2" aria-label="Ideas">
+              <div className="mt-3 flex flex-wrap gap-2" aria-label={t("Ideas")}>
                 {IDEAS.map((idea) => (
-                  <button key={idea} type="button" onClick={() => setName(idea)}
+                  <button key={idea} type="button" onClick={() => setName(t(idea))}
                     className="rounded-full border border-line px-3 py-1 text-xs text-mute hover:text-paper hover:border-volt transition-colors">
-                    {idea}
+                    {t(idea)}
                   </button>
                 ))}
               </div>
             </Step>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Step n={2} title="How long can people join?" hint={<>People can join for the next <b className="text-paper">{windowText}</b>.</>}>
-                <div className="grid place-items-center pt-2"><Dial stops={STOPS} index={stop} onChange={setStop} label="Window length" /></div>
+              <Step n={2} title={t("How long can people join?")} hint={<>{t("People can join for the next")} <b className="text-paper">{windowText}</b>.</>} stepLabel={t("Step")}>
+                <div className="grid place-items-center pt-2"><Dial stops={STOPS} index={stop} onChange={setStop} label={t("Window length")} /></div>
               </Step>
-              <Step n={3} title="How many people win?" hint={<>Up to <b className="text-paper">{slots}</b> {slots === 1 ? "person wins" : "people win"}. If fewer join, everyone wins.</>}>
-                <div className="grid place-items-center pt-2"><VSlider min={1} max={MAX_SLOTS} value={slots} onChange={setSlots} label="Winners" ticks={[1, 50, 100, 150, 200]} /></div>
+              <Step n={3} title={t("How many people win?")} hint={<>{t("Up to")} <b className="text-paper">{slots}</b> {slots === 1 ? t("person wins") : t("people win")}. {t("If fewer join, everyone wins.")}</>} stepLabel={t("Step")}>
+                <div className="grid place-items-center pt-2"><VSlider min={1} max={MAX_SLOTS} value={slots} onChange={setSlots} label={t("Winners")} ticks={[1, 50, 100, 150, 200]} /></div>
               </Step>
             </div>
 
             {/* plain-language schedule */}
-            <div className="rounded-[1.5rem] tactile-pressed p-5" aria-label="Schedule">
-              <p className="label mb-3">What happens, and when</p>
+            <div className="rounded-[1.5rem] tactile-pressed p-5" aria-label={t("Schedule")}>
+              <p className="label mb-3">{t("What happens, and when")}</p>
               <ol className="grid grid-cols-1 gap-2 sm:grid-cols-3 text-sm">
-                <li className="rounded-xl bg-volt/15 border border-volt/30 px-3 py-2"><span className="label block">Now</span>The line opens</li>
-                <li className="rounded-xl bg-ink-3 px-3 py-2"><span className="label block">In {windowText}</span>The line closes</li>
-                <li className="rounded-xl bg-volt text-ink px-3 py-2"><span className="label block text-ink/70">A few seconds later</span>The draw can run</li>
+                <li className="rounded-xl bg-volt/15 border border-volt/30 px-3 py-2"><span className="label block">{t("Now")}</span>{t("The line opens")}</li>
+                <li className="rounded-xl bg-ink-3 px-3 py-2"><span className="label block">{t("In {time}", { time: windowText })}</span>{t("The line closes")}</li>
+                <li className="rounded-xl bg-volt text-ink px-3 py-2"><span className="label block text-ink/70">{t("A few seconds later")}</span>{t("The draw can run")}</li>
               </ol>
               <details className="mt-4 group">
                 <summary className="cursor-pointer list-none label hover:text-paper">
-                  <span className="group-open:hidden">+ Why can&apos;t anyone cheat?</span>
-                  <span className="hidden group-open:inline">− Why can&apos;t anyone cheat?</span>
+                  <span className="group-open:hidden">+ {t("Why can't anyone cheat?")}</span>
+                  <span className="hidden group-open:inline">− {t("Why can't anyone cheat?")}</span>
                 </summary>
                 <p className="mt-3 text-sm text-mute leading-relaxed max-w-prose">
-                  When you create the campaign, the contract fixes a future block, the seed block (creation block + {fmtInt(seedOffsetBlocks)},
-                  at ~{BLOCK_MS} ms per block). Its hash, which nobody knows in advance, you included, decides the winners. People can only join
-                  before that block exists, and anyone can recompute the result afterwards.
+                  {t("When you create the campaign, the moment of the draw is fixed: a block about {n} blocks from now (~{ms} ms each). Its fingerprint, which nobody knows in advance, you included, decides the winners. People can only join before that block exists, and anyone can check the result afterwards.", { n: fmtInt(seedOffsetBlocks), ms: BLOCK_MS })}
                 </p>
               </details>
             </div>
@@ -141,7 +141,7 @@ export default function CreatePage() {
 
         {/* preview + create */}
         <Reveal delay={120} className="lg:sticky lg:top-24">
-          <Stage title="Your campaign" right={<span className="text-mute">preview</span>}>
+          <Stage title={t("Your campaign")} right={<span className="text-mute">{t("preview")}</span>}>
             <div className="p-6 sm:p-8">
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.p
@@ -152,7 +152,7 @@ export default function CreatePage() {
                   transition={{ duration: 0.25 }}
                   className="t-h3 font-display font-extrabold break-words min-h-[1.1em]"
                 >
-                  {trimmed || <span className="text-mute/40">Untitled campaign</span>}
+                  {trimmed || <span className="text-mute/40">{t("Untitled campaign")}</span>}
                 </motion.p>
               </AnimatePresence>
 
@@ -165,34 +165,33 @@ export default function CreatePage() {
               </div>
 
               <dl className="mt-6 grid grid-cols-2 gap-x-4 gap-y-3 text-sm border-t border-line pt-5">
-                <div><dt className="label">Open for</dt><dd className="mt-1">{windowText}</dd></div>
-                <div><dt className="label">Winners</dt><dd className="mt-1 tabular-nums">{slots}</dd></div>
-                <div><dt className="label">Entries</dt><dd className="mt-1">1 per account</dd></div>
-                <div><dt className="label">Organizer</dt><dd className="mt-1 font-mono">{address ? `${short(address)} (you)` : "you"}</dd></div>
+                <div><dt className="label">{t("Open for")}</dt><dd className="mt-1">{windowText}</dd></div>
+                <div><dt className="label">{t("Winners")}</dt><dd className="mt-1 tabular-nums">{slots}</dd></div>
+                <div><dt className="label">{t("Entries")}</dt><dd className="mt-1">{t("1 per account")}</dd></div>
+                <div><dt className="label">{t("Organizer")}</dt><dd className="mt-1 font-mono">{address ? `${short(address)} (${t("you")})` : t("you")}</dd></div>
               </dl>
 
               <div className="mt-7 space-y-3">
                 {!onChain ? (
                   <>
                     <ConnectButton big />
-                    <p className="text-xs text-mute">Sign in with the email or wallet you&apos;ll organize from. With email, network fees are covered by the app.</p>
+                    <p className="text-xs text-mute">{t("Sign in with the email or wallet you'll organize from. With email, network fees are covered by the app.")}</p>
                   </>
                 ) : (
                   <button onClick={submit} disabled={!ready} className="w-full glow btn-volt rounded-2xl px-6 py-4 font-semibold text-lg active:scale-[0.98] transition-transform">
-                    {tx.stage ?? (tx.done ? "Opening your campaign…" : sent ? "Already sent" : valid ? "Create campaign" : "Name it first (step 1)")}
+                    {tx.stage ? t(tx.stage) : tx.done ? t("Opening your campaign…") : sent ? t("Already sent") : valid ? t("Create campaign") : t("Name it first (step 1)")}
                   </button>
                 )}
-                {onChain && !sent && <p className="text-xs text-mute">Next you get the campaign page with a link to share.</p>}
-                {!isConfigured && <p className="text-sm text-bad">Contract address not configured (NEXT_PUBLIC_NEXT_ADDRESS).</p>}
-                {tx.error && !sent && <p role="alert" className="text-sm text-bad">{tx.error}</p>}
+                {onChain && !sent && <p className="text-xs text-mute">{t("Next you get the campaign page with a link to share.")}</p>}
+                {!isConfigured && <p className="text-sm text-bad">{t("Contract address not configured")} (NEXT_PUBLIC_NEXT_ADDRESS).</p>}
+                {tx.error && !sent && <p role="alert" className="text-sm text-bad">{t(tx.error)}</p>}
                 {tx.error && sent && (
                   <p role="alert" className="text-sm text-mute">
-                    The transaction was sent, but its confirmation hasn&apos;t shown up yet. Check it on the explorer before creating
-                    another one.{" "}
-                    <button className="underline text-paper" onClick={() => tx.reset()}>Start over</button>
+                    {t("The transaction was sent, but its confirmation hasn't shown up yet. Check it on the explorer before creating another one.")}{" "}
+                    <button className="underline text-paper" onClick={() => tx.reset()}>{t("Start over")}</button>
                   </p>
                 )}
-                {tx.hash && <a className="label underline block" href={explorerTx(tx.hash)} target="_blank" rel="noreferrer">View transaction</a>}
+                {tx.hash && <a className="label underline block" href={explorerTx(tx.hash)} target="_blank" rel="noreferrer">{t("View transaction")}</a>}
               </div>
             </div>
           </Stage>
@@ -201,13 +200,13 @@ export default function CreatePage() {
 
       {/* after creation */}
       <section aria-labelledby="after-h" className="mt-24">
-        <Reveal><h2 id="after-h" className="t-h3 font-display font-bold">After you create it</h2></Reveal>
+        <Reveal><h2 id="after-h" className="t-h3 font-display font-bold">{t("After you create it")}</h2></Reveal>
         <ol className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
           {AFTER.map((s, i) => (
             <Reveal key={s.t} as="li" delay={i * 90} className="rounded-[1.75rem] border border-line p-6">
               <span className="squircle grid place-items-center size-9 bg-volt/20 text-volt-2 font-mono text-xs">0{i + 1}</span>
-              <p className="mt-6 font-display text-2xl font-bold leading-tight">{s.t}</p>
-              <p className="mt-3 text-sm text-mute leading-relaxed">{s.d}</p>
+              <p className="mt-6 font-display text-2xl font-bold leading-tight">{t(s.t)}</p>
+              <p className="mt-3 text-sm text-mute leading-relaxed">{t(s.d)}</p>
             </Reveal>
           ))}
         </ol>
@@ -228,10 +227,10 @@ function RoleCard({ tag, role, text, accent }: { tag: string; role: string; text
   );
 }
 
-function Step({ n, title, hint, children }: { n: number; title: string; hint: ReactNode; children: ReactNode }) {
+function Step({ n, title, hint, stepLabel, children }: { n: number; title: string; hint: ReactNode; stepLabel: string; children: ReactNode }) {
   return (
     <fieldset className="rounded-[1.5rem] tactile-pressed p-5">
-      <legend className="sr-only">{`Step ${n}: ${title}`}</legend>
+      <legend className="sr-only">{`${stepLabel} ${n}: ${title}`}</legend>
       <div className="flex items-start gap-3" aria-hidden>
         <span className="squircle grid place-items-center size-8 shrink-0 bg-volt text-ink font-mono text-xs font-bold">{n}</span>
         <p className="font-display text-xl font-bold leading-tight pt-1">{title}</p>

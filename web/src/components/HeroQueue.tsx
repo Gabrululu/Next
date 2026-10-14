@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { useT } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { QueueDots } from "./QueueDots";
 
@@ -10,6 +11,7 @@ const HOLD_MS = 5200;
 
 /** Decorative loop: people join the line in any order, the window closes, the line reshuffles. */
 export function HeroQueue() {
+  const tr = useT();
   const reduce = useReducedMotion();
   const [count, setCount] = useState(reduce ? TOTAL : 0);
   const [round, setRound] = useState(0);
@@ -39,8 +41,8 @@ export function HeroQueue() {
       {/* window chrome */}
       <div className="flex items-center gap-3 px-5 py-3 border-b border-line">
         <span className="size-2.5 rounded-full bg-ink-3" /><span className="size-2.5 rounded-full bg-ink-3" /><span className="size-2.5 rounded-full bg-ink-3" />
-        <span className="label ml-2 truncate">Illustration · the line</span>
-        <span className="ml-auto font-mono text-sm tabular-nums whitespace-nowrap">{count} in line</span>
+        <span className="label ml-2 truncate">{tr("Illustration · the line")}</span>
+        <span className="ml-auto font-mono text-sm tabular-nums whitespace-nowrap">{tr("{n} in line", { n: count })}</span>
       </div>
 
       <div className="p-5 sm:p-8">
@@ -55,9 +57,9 @@ export function HeroQueue() {
             animate={{ width: `calc(${(Math.min(count, TOTAL) / TOTAL) * 70}% - 4px)` }}
             transition={{ duration: reduce ? 0 : 0.15 }}
           />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 label text-[10px]">Window open</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 label text-[10px]">{tr("Open to join")}</span>
           <div className={`absolute inset-y-1 right-1 w-[29%] rounded-lg grid place-items-center transition-colors duration-500 ${closed ? "bg-volt text-ink" : "bg-ink-3 text-mute"}`}>
-            <span className="font-mono text-[10px] uppercase tracking-wider">{closed ? `Drawn · ${WINNERS} picked` : "Seed block"}</span>
+            <span className="font-mono text-[10px] uppercase tracking-wider">{closed ? tr("Drawn · {n} picked", { n: WINNERS }) : tr("The draw")}</span>
           </div>
           <motion.div
             className="absolute inset-y-0 w-0.5 bg-paper shadow-[0_0_8px_white]"
@@ -66,7 +68,7 @@ export function HeroQueue() {
             aria-hidden
           />
         </div>
-        <p className="label mt-3">{closed ? "Picked from a public seed. Anyone can recompute it." : "Arrival order doesn't matter"}</p>
+        <p className="label mt-3">{closed ? tr("Picked by a fair draw. Anyone can check it.") : tr("Arrival order doesn't matter")}</p>
       </div>
     </div>
   );

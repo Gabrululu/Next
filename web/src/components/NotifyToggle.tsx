@@ -5,10 +5,12 @@
 // verified token and checks on-chain that this account is registered. Hidden when the server isn't configured.
 import { useEffect, useState } from "react";
 import { dynamicClient } from "@/lib/dynamic";
+import { useT } from "@/lib/i18n";
 
 type State = { configured: boolean; subscribed: boolean } | undefined;
 
 export function NotifyToggle({ campaignId, email }: { campaignId: bigint; email: string }) {
+  const t = useT();
   const [state, setState] = useState<State>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
@@ -38,10 +40,10 @@ export function NotifyToggle({ campaignId, email }: { campaignId: bigint; email:
     try {
       const r = await call(state.subscribed ? "DELETE" : "POST");
       const j = (await r.json()) as { subscribed?: boolean; error?: string };
-      if (!r.ok) setError(j.error ?? "Something went wrong. Please try again.");
+      if (!r.ok) setError(t(j.error ?? "Something went wrong. Please try again."));
       else setState({ configured: true, subscribed: !!j.subscribed });
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t("Something went wrong. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -52,9 +54,9 @@ export function NotifyToggle({ campaignId, email }: { campaignId: bigint; email:
       <label className="flex items-start gap-3 cursor-pointer">
         <input type="checkbox" className="mt-0.5 size-4 accent-[var(--color-volt)]" checked={state.subscribed} disabled={busy} onChange={() => void toggle()} />
         <span>
-          <span className="font-semibold">Email me the result</span>
+          <span className="font-semibold">{t("Email me the result")}</span>
           <span className="block text-mute">
-            {state.subscribed ? `We'll write to ${email} when the draw happens.` : `One email to ${email} after the draw. Nothing else.`}
+            {state.subscribed ? t("We'll write to {email} when the draw happens.", { email }) : t("One email to {email} after the draw. Nothing else.", { email })}
           </span>
         </span>
       </label>

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "brand:assets": "npx tsx scripts/gen-brand-assets.tsx",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

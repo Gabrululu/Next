@@ -6,11 +6,13 @@ import { usePublicClient, useReadContract } from "wagmi";
 import { NEXT_ADDRESS, short } from "@/lib/config";
 import { verifyPassQr, type ScanResult } from "@/lib/passQr";
 import { nextAbi } from "@/lib/shared/abi";
+import { useT } from "@/lib/i18n";
 
 export default function ScanPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: raw } = use(params);
   const id = /^\d+$/.test(raw) ? BigInt(raw) : 0n;
   const client = usePublicClient();
+  const t = useT();
   const campaign = useReadContract({ address: NEXT_ADDRESS, abi: nextAbi, functionName: "getCampaign", args: [id], query: { enabled: id > 0n } });
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -54,7 +56,7 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
       await v.play();
       setScanning(true);
     } catch {
-      setCamError("Camera not available. Allow camera access, or paste the QR text below.");
+      setCamError(t("Camera not available. Allow camera access, or paste the QR text below."));
     }
   };
 
@@ -76,51 +78,51 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="mx-auto max-w-xl px-4 pt-14 pb-16">
-      <p className="label">Check-in · Campaign #{raw}</p>
+      <p className="label">{t("Check-in · Campaign #{id}", { id: raw })}</p>
       <h1 className="t-h2 font-display font-extrabold mt-3 break-words">{campaign.data?.name ?? "…"}</h1>
-      <p className="mt-3 text-mute">Scan a winner&apos;s pass QR. Each scan checks the signature, the time, and that the account holds the pass on-chain.</p>
+      <p className="mt-3 text-mute">{t("Scan a winner's pass QR. Each scan checks that the account signed it, that it's fresh, and that the account holds the pass.")}</p>
 
       <div className="mt-8 rounded-[2rem] overflow-hidden bg-[#0f0d13] border border-line relative aspect-square">
         <video ref={videoRef} playsInline muted className={`size-full object-cover ${scanning ? "" : "hidden"}`} />
         <canvas ref={canvasRef} className="hidden" />
         {!scanning && (
           <div className="absolute inset-0 grid place-items-center p-6 text-center">
-            {checking ? <p className="label">Checking…</p>
+            {checking ? <p className="label">{t("Checking…")}</p>
             : result ? (
               <div role="status" className="space-y-3">
-                <p className={`t-h2 font-display font-extrabold ${result.ok ? "text-ok" : "text-bad"}`}>{result.ok ? "Valid pass" : "Not valid"}</p>
+                <p className={`t-h2 font-display font-extrabold ${result.ok ? "text-ok" : "text-bad"}`}>{result.ok ? t("Valid pass") : t("Not valid")}</p>
                 {result.claim && <p className="font-mono text-sm">{short(result.claim.address)}</p>}
-                <p className="text-mute">{result.ok ? `Signed ${result.ageS}s ago. Checked in.` : result.reason}</p>
+                <p className="text-mute">{result.ok ? t("Signed {s}s ago. Checked in.", { s: result.ageS }) : t(result.reason)}</p>
               </div>
-            ) : <p className="text-mute">Camera is off.</p>}
+            ) : <p className="text-mute">{t("Camera is off.")}</p>}
           </div>
         )}
       </div>
 
       <div className="mt-5 flex gap-3">
         {scanning
-          ? <button onClick={stop} className="flex-1 tactile rounded-2xl px-5 py-3 font-semibold">Stop</button>
-          : <button onClick={() => void start()} disabled={checking || !client} className="flex-1 glow btn-volt rounded-2xl px-5 py-3 font-semibold">{result ? "Scan next" : "Start camera"}</button>}
+          ? <button onClick={stop} className="flex-1 tactile rounded-2xl px-5 py-3 font-semibold">{t("Stop")}</button>
+          : <button onClick={() => void start()} disabled={checking || !client} className="flex-1 glow btn-volt rounded-2xl px-5 py-3 font-semibold">{result ? t("Scan next") : t("Start camera")}</button>}
       </div>
       {camError && <p role="alert" className="mt-3 text-sm text-bad">{camError}</p>}
 
       <details className="mt-6">
-        <summary className="label cursor-pointer">No camera? Paste the QR text</summary>
+        <summary className="label cursor-pointer">{t("No camera? Paste the QR text")}</summary>
         <form onSubmit={(e) => { e.preventDefault(); if (paste.trim()) void check(paste.trim()); }} className="mt-3 space-y-3">
           <textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={3} className="w-full rounded-xl tactile-pressed px-4 py-3 font-mono text-xs outline-none focus:ring-2 focus:ring-volt" />
-          <button type="submit" disabled={checking || !paste.trim()} className="tactile rounded-xl px-4 py-2 font-semibold">Check</button>
+          <button type="submit" disabled={checking || !paste.trim()} className="tactile rounded-xl px-4 py-2 font-semibold">{t("Check")}</button>
         </form>
       </details>
 
       {checkedIn.length > 0 && (
         <section className="mt-10">
-          <p className="label">Checked in on this device · {checkedIn.length}</p>
+          <p className="label">{t("Checked in on this device · {n}", { n: checkedIn.length })}</p>
           <ul className="mt-3 space-y-1 font-mono text-sm">{checkedIn.map((a, i) => <li key={`${a}-${i}`}>{short(a)}</li>)}</ul>
         </section>
       )}
 
       <p className="mt-12 text-xs text-mute leading-relaxed">
-        Limits: a QR stays valid for 5 minutes, and &quot;already scanned&quot; is remembered only on this device, so the same QR could pass at a second scanner within that window. A valid QR proves the account signed it, not who is holding the phone.
+        {t("Limits: a QR stays valid for 5 minutes, and \"already scanned\" is remembered only on this device, so the same QR could pass at a second scanner within that window. A valid QR proves the account signed it, not who is holding the phone.")}
       </p>
     </div>
   );

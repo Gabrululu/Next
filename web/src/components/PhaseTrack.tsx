@@ -1,12 +1,13 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { useT } from "@/lib/i18n";
 import type { Phase } from "@/lib/campaign";
 
 const SEGMENTS: { key: Phase | "closed"; label: string; from: number; to: number }[] = [
-  { key: "open", label: "Window open", from: 0, to: 55 },
+  { key: "open", label: "Open to join", from: 0, to: 55 },
   { key: "sealing", label: "Closed", from: 55, to: 77 },
-  { key: "drawable", label: "Seed block", from: 77, to: 88 },
+  { key: "drawable", label: "Ready to draw", from: 77, to: 88 },
   { key: "drawn", label: "Drawn", from: 88, to: 100 },
 ];
 const ORDER: Phase[] = ["upcoming", "open", "sealing", "drawable", "drawn"];
@@ -14,6 +15,7 @@ const ORDER: Phase[] = ["upcoming", "open", "sealing", "drawable", "drawn"];
 /** Editor-style timeline of a campaign's lifecycle with a playhead at the current phase. */
 export function PhaseTrack({ phase, openProgress }: { phase: Phase; openProgress: number }) {
   const reduce = useReducedMotion();
+  const t = useT();
   const idx = ORDER.indexOf(phase);
   const head =
     phase === "upcoming" ? 0 :
@@ -22,7 +24,7 @@ export function PhaseTrack({ phase, openProgress }: { phase: Phase; openProgress
     phase === "drawable" ? 82.5 : 100;
 
   return (
-    <div role="img" aria-label={`Campaign timeline. Current phase: ${phase}.`}>
+    <div role="img" aria-label={t("Campaign timeline")}>
       <div className="relative h-11 rounded-xl tactile-pressed">
         {SEGMENTS.map((s) => {
           const done = ORDER.indexOf(s.key as Phase) < idx;
@@ -34,7 +36,7 @@ export function PhaseTrack({ phase, openProgress }: { phase: Phase; openProgress
                 current ? "bg-volt/25 border border-volt/50" : done ? "bg-volt/10 border border-volt/20" : "bg-ink-3/60 border border-transparent"}`}
               style={{ left: `calc(${s.from}% + 4px)`, width: `calc(${s.to - s.from}% - 6px)` }}
             >
-              <span className={`font-mono text-[10px] uppercase tracking-wider truncate ${current ? "text-paper" : "text-mute"}`}>{s.label}</span>
+              <span className={`font-mono text-[10px] uppercase tracking-wider truncate ${current ? "text-paper" : "text-mute"}`}>{t(s.label)}</span>
             </div>
           );
         })}
