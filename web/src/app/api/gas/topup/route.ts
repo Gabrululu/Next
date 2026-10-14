@@ -19,7 +19,9 @@ import { appChain, NEXT_ADDRESS, RPC_URL } from "@/lib/config";
 import { AuthError, verifyDynamicToken } from "@/lib/server/dynamicAuth";
 import { hasRedis, redis, serverClient } from "@/lib/server/services";
 
-const KEY = (process.env.GAS_TOPUP_PRIVATE_KEY ?? "") as Hex;
+// Tolerate common paste mistakes in the dashboard: surrounding quotes/whitespace and a missing 0x prefix.
+const RAW_KEY = (process.env.GAS_TOPUP_PRIVATE_KEY ?? "").trim().replace(/^["']|["']$/g, "").trim();
+const KEY = (RAW_KEY && !RAW_KEY.startsWith("0x") ? `0x${RAW_KEY}` : RAW_KEY) as Hex;
 const ALCHEMY = process.env.ALCHEMY_RPC_URL ?? "";
 
 const MAX_PER_TX = 50_000_000_000_000_000n; // 0.05 MON: well above any Next call (createCampaign ≈ 0.03 at the 100 gwei floor)
@@ -32,7 +34,12 @@ const json = (body: unknown, status = 200) => Response.json(body, { status });
 const day = () => new Date().toISOString().slice(0, 10);
 
 export async function POST(req: Request) {
-  if (!/^0x[0-9a-fA-F]{64}$/.test(KEY) || !hasRedis) return json({ error: "Fee top-up is not configured" }, 501);
+  // Say which piece is missing (never the value) so a deploy can be fixed without guessing.
+  const missing = [
+    ...(!RAW_KEY ? ["GAS_TOPUP_PRIVATE_KEY is not set"] : !/^0x[0-9a-fA-F]{64}$/.test(KEY) ? ["GAS_TOPUP_PRIVATE_KEY is not a 32-byte hex key"] : []),
+    ...(!hasRedis ? ["Upstash is not configured"] : []),
+  ];
+  if (missing.length) return json({ error: "Fee top-up is not configured", missing }, 501);
 
   let user;
   try { user = await verifyDynamicToken(req.headers.get("authorization")); }

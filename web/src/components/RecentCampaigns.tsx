@@ -5,7 +5,7 @@ import { useT } from "@/lib/i18n";
 import { useRef } from "react";
 import { useReadContract, useReadContracts } from "wagmi";
 import type { Address } from "viem";
-import { LEGACY_NEXT_ADDRESS, NEXT_ADDRESS, contractQuery, hasLegacy, isConfigured } from "@/lib/config";
+import { NEXT_ADDRESS, contractQuery, isConfigured } from "@/lib/config";
 import { nextAbi } from "@/lib/shared/abi";
 
 const LOOKBACK = 10; // how many recent campaigns to inspect per contract
@@ -13,6 +13,11 @@ const POLL_MS = 15_000; // gentle on the RPC
 const SHOW = 6;
 /** Internal test runs (stress tests, smoke tests) are real on-chain data but not events: they stay off the landing page. */
 const IS_TEST = /simulated entrants|smoke test/i;
+/**
+ * On-chain campaigns can't be deleted. Campaigns with id <= this value (env) are hidden from the landing page;
+ * their pages and verification still work by direct link. The previous contract version is not listed at all.
+ */
+const HIDE_UP_TO = BigInt(/^\d+$/.test(process.env.NEXT_PUBLIC_HIDE_CAMPAIGNS_UP_TO ?? "") ? process.env.NEXT_PUBLIC_HIDE_CAMPAIGNS_UP_TO! : "0");
 
 type C = { name: string; slots: number; drawn: boolean; closeAt: bigint };
 type Row = { contract: Address; id: bigint; c: C; regs: bigint; open: boolean };
@@ -20,9 +25,8 @@ type Row = { contract: Address; id: bigint; c: C; regs: bigint; open: boolean };
 /** Real campaigns from the deployed contract(s), newest first. Empty finished ones and test runs are hidden. */
 export function RecentCampaigns() {
   const current = useRows(NEXT_ADDRESS, true);
-  const legacy = useRows(LEGACY_NEXT_ADDRESS, hasLegacy);
   const t = useT();
-  const rows = [...current, ...legacy].slice(0, SHOW);
+  const rows = current.slice(0, SHOW);
   if (!isConfigured || rows.length === 0) return null;
 
   return (
@@ -69,5 +73,5 @@ function useRows(contract: Address, enabled: boolean): Row[] {
     .map((id) => ({ id, hit: cache.current.get(id.toString()) }))
     .filter((r): r is { id: bigint; hit: { c: C; regs: bigint } } => !!r.hit)
     .map(({ id, hit }) => ({ contract, id, c: hit.c, regs: hit.regs, open: !hit.c.drawn && nowSec < Number(hit.c.closeAt) }))
-    .filter((r) => !IS_TEST.test(r.c.name) && (r.open || r.regs > 0n));
+    .filter((r) => r.id > HIDE_UP_TO && !IS_TEST.test(r.c.name) && (r.open || r.regs > 0n));
 }
