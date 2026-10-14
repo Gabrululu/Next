@@ -1,11 +1,13 @@
 "use client";
 
+import { signMessage } from "@dynamic-labs-sdk/client";
 import { sendSponsoredTransaction, SponsorTransactionError } from "@dynamic-labs-sdk/evm";
 import { createWalletClientForWalletAccount } from "@dynamic-labs-sdk/evm/viem";
 import { useState } from "react";
 import { BaseError, encodeFunctionData, type Abi, type Address, type Hex, type TransactionReceipt } from "viem";
 import { usePublicClient } from "wagmi";
 import { dynamicClient } from "./dynamic";
+import { topupMessage } from "./topup";
 import { ensureAppNetwork, useAccountState } from "./wallet";
 
 type Call = { address: Address; abi: Abi; functionName: string; args?: readonly unknown[] };
@@ -58,10 +60,13 @@ export function useTx(onConfirmed?: (receipt: TransactionReceipt) => void) {
         if (balance < gas * fees.maxFeePerGas! && embedded) {
           // Email accounts: the app sends exactly this transaction's fee (see /api/gas/topup for why and the limits).
           setStage("Covering the network fee…");
+          // Prove the account is ours (embedded wallets sign silently); see lib/topup.ts.
+          const time = Math.floor(Date.now() / 1000);
+          const { signature } = await signMessage({ walletAccount: account, message: topupMessage(account.address as Address, data, time) });
           const r = await fetch("/api/gas/topup", {
             method: "POST",
             headers: { "content-type": "application/json", ...(dynamicClient?.token ? { authorization: `Bearer ${dynamicClient.token}` } : {}) },
-            body: JSON.stringify({ address: account.address, data }),
+            body: JSON.stringify({ address: account.address, data, time, signature }),
           });
           if (!r.ok) {
             const j = (await r.json().catch(() => ({}))) as { error?: string };

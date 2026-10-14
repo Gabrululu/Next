@@ -13,11 +13,12 @@
 //   drain the wallet with arbitrary gas requests
 // - amount = explicit gas limit × max fee, minus what the account already holds; per-tx cap
 // - per-user and global daily limits in Upstash; without Upstash it refuses (fails closed)
-import { createWalletClient, fallback, formatEther, getAddress, http, isHex, type Hex } from "viem";
+import { createWalletClient, fallback, formatEther, getAddress, http, isHex, recoverMessageAddress, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { appChain, NEXT_ADDRESS, RPC_URL } from "@/lib/config";
 import { AuthError, verifyDynamicToken } from "@/lib/server/dynamicAuth";
 import { hasRedis, redis, serverClient } from "@/lib/server/services";
+import { topupMessage } from "@/lib/topup";
 
 // Tolerate common paste mistakes in the dashboard: surrounding quotes/whitespace and a missing 0x prefix.
 const RAW_KEY = (process.env.GAS_TOPUP_PRIVATE_KEY ?? "").trim().replace(/^["']|["']$/g, "").trim();
@@ -45,10 +46,18 @@ export async function POST(req: Request) {
   try { user = await verifyDynamicToken(req.headers.get("authorization")); }
   catch (e) { return json({ error: e instanceof AuthError ? e.message : "Invalid session" }, 401); }
 
-  const body = (await req.json().catch(() => ({}))) as { data?: unknown; address?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { data?: unknown; address?: unknown; time?: unknown; signature?: unknown };
   if (!isHex(body.data) || typeof body.address !== "string" || !/^0x[0-9a-fA-F]{40}$/.test(body.address)) return json({ error: "Bad request" }, 400);
   const to = getAddress(body.address);
-  if (!user.addresses.includes(to.toLowerCase())) return json({ error: "That account isn't yours" }, 403);
+  // Ownership: the address is in the session's verified credentials, OR it signed a fresh top-up message.
+  // (A session issued before the embedded wallet was created doesn't list the wallet yet.)
+  let owns = user.addresses.includes(to.toLowerCase());
+  if (!owns && isHex(body.signature) && typeof body.time === "number" && Math.abs(Date.now() / 1000 - body.time) <= 300) {
+    const message = topupMessage(to, body.data, body.time);
+    try { owns = (await recoverMessageAddress({ message, signature: body.signature })).toLowerCase() === to.toLowerCase(); } catch { /* try ERC-1271 */ }
+    if (!owns) { try { owns = await serverClient.verifyMessage({ address: to, message, signature: body.signature }); } catch { owns = false; } }
+  }
+  if (!owns) return json({ error: "That account isn't yours" }, 403);
 
   // Exact need for THIS call; reverts in simulation (e.g. already registered) get no MON.
   let need: bigint;
