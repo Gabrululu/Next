@@ -23,7 +23,7 @@ How Next uses each sponsor, where the code lives, how to check it, and what's st
 - `web/src/lib/server/dynamicAuth.ts`
 
 **Fallback**
-- If sponsorship is rejected (`SponsorTransactionError`), the embedded wallet pays with an explicit gas limit when it has MON. Otherwise the user gets a plain-language message.
+- If sponsorship is rejected (`SponsorTransactionError`, reason logged to the console), the app tops up the embedded wallet for that one transaction (see Notes) and sends it with an explicit gas limit. If the top-up isn't configured or a limit is reached, the user gets a plain-language message.
 - Without `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`, the app stays read-only and says sign-in isn't configured.
 
 **How to check**
@@ -35,7 +35,15 @@ How Next uses each sponsor, where the code lives, how to check it, and what's st
 
 **Notes**
 - The spec's `isEvmGasSponsorshipEnabled` does not exist in Dynamic's docs, so it isn't used.
-- Dynamic's docs list Sepolia and Base Sepolia for sponsorship. Monad testnet sponsorship was enabled in our dashboard, and this needs confirming live.
+- **Sponsorship doesn't run on Monad testnet (checked on-chain, 2026-10-13).** It delegates the account (EIP-7702) to Dynamic's contract `0x0000Fb7702036ff9f76044a501ac1aA74cbab16b`. That address has code on Sepolia and Base Sepolia, the networks Dynamic's docs list, but `eth_getCode` returns `0x` on Monad testnet. This holds even with sponsorship enabled for testnet in the dashboard. The app still tries `sendSponsoredTransaction` first, so it starts working the day Dynamic deploys there.
+- **Fallback in production: app fee top-up.** `POST /api/gas/topup` (`web/src/app/api/gas/topup/route.ts`) sends an email account the MON for exactly one transaction, and the account then pays its own fee.
+  - It verifies the Dynamic session (JWT).
+  - The funded address must be one of the session's verified addresses.
+  - It only accepts calls to `Next` that succeed in simulation.
+  - The amount is the explicit gas limit × max fee, minus the account's current balance, capped at 0.05 MON per transaction.
+  - Daily limits live in Upstash: 20 top-ups per user and 3 MON overall. Without Upstash it refuses (fails closed).
+  - It then waits 10 blocks, so the RPC accepts the spend.
+  - The key is a testnet-only wallet in `GAS_TOPUP_PRIVATE_KEY`, server-side only.
 - Sponsorship is documented for "V3 MPC embedded wallets only", so external wallets are never sent through it.
 
 ---

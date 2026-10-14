@@ -6,7 +6,7 @@ Next is a fair way to hand out things that run out: event seats, workshop spots,
 
 - **Live app:** https://next-monad.vercel.app (Monad **testnet**)
 - **Track:** Social, Attention & Culture (Monad Metropolis)
-- **Docs:** [ARCHITECTURE.md](ARCHITECTURE.md) · [SPONSORS.md](SPONSORS.md) · [DEMO.md](DEMO.md) · [PITCH.md](PITCH.md) · [BRAND.md](BRAND.md)
+- **Docs:** [ARCHITECTURE.md](ARCHITECTURE.md) · [SPONSORS.md](SPONSORS.md)
 
 > ⚠️ **Prototype on Monad testnet.** Test MON has no value and the contracts are **not audited**.
 > - **One entry per account is not proof of unique personhood.** It reduces multi-account abuse but doesn't stop it. One person can create several accounts.
@@ -65,7 +65,7 @@ Confirmation time runs until our block poller saw the transaction through the pu
 
 | Sponsor | What it does in Next | Fallback |
 |---|---|---|
-| **Dynamic** | Email sign-in (OTP) that creates an embedded wallet (new JS SDK `@dynamic-labs-sdk/*`). Network fees are paid with `sendSponsoredTransaction`. People who already have a wallet can sign in with it instead (`connectAndVerifyWithWalletProvider`) and pay their own fee. The server verifies Dynamic JWTs (JWKS, RS256, `user:basic` scope) for email opt-in. | If sponsorship is rejected, the embedded wallet pays its own fee (explicit gas limit) when it has MON; otherwise the user sees a plain message. With no Dynamic env id, the app still reads everything. |
+| **Dynamic** | Email sign-in (OTP) that creates an embedded wallet (new JS SDK `@dynamic-labs-sdk/*`). Network fees are covered for those accounts: `sendSponsoredTransaction` is tried first, but Dynamic's 7702 delegation contract isn't deployed on Monad testnet, so the app tops up the account with that transaction's exact fee instead (see SPONSORS.md). People who already have a wallet can sign in with it instead (`connectAndVerifyWithWalletProvider`) and pay their own fee. The server verifies Dynamic JWTs (JWKS, RS256, `user:basic` scope) for email opt-in. | If sponsorship is rejected, the embedded wallet pays its own fee (explicit gas limit) when it has MON; otherwise the user sees a plain message. With no Dynamic env id, the app still reads everything. |
 | **Envio** | HyperIndex indexer (`/indexer`) for campaigns, registrations, draws, winners, passes and per-block stats. It feeds the verifier's registrant list, the live panel on `/stress` and "Latest in line" on campaign pages. | Every reader falls back to direct contract reads. Envio data is used only when it matches the on-chain registrant count. |
 | **Alchemy** | Monad testnet RPC (browser and server) with the public RPC as fallback. A Custom Webhook on the `Drawn` event triggers result emails. | viem `fallback` transport. Webhook requests are HMAC-verified, and results are always re-read from the contract. |
 

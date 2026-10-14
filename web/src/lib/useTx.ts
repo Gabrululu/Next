@@ -5,6 +5,7 @@ import { createWalletClientForWalletAccount } from "@dynamic-labs-sdk/evm/viem";
 import { useState } from "react";
 import { BaseError, encodeFunctionData, type Abi, type Address, type Hex, type TransactionReceipt } from "viem";
 import { usePublicClient } from "wagmi";
+import { dynamicClient } from "./dynamic";
 import { ensureAppNetwork, useAccountState } from "./wallet";
 
 type Call = { address: Address; abi: Abi; functionName: string; args?: readonly unknown[] };
@@ -44,6 +45,8 @@ export function useTx(onConfirmed?: (receipt: TransactionReceipt) => void) {
           setSponsored(true);
         } catch (e) {
           if (!(e instanceof SponsorTransactionError)) throw e;
+          // Keep the relay's reason visible for debugging; the user still gets the plain fallback message.
+          console.warn("[Next] Dynamic gas sponsorship failed:", e.message, e.cause ?? "");
         }
       }
       if (!txHash) {
@@ -51,7 +54,22 @@ export function useTx(onConfirmed?: (receipt: TransactionReceipt) => void) {
         setStage(embedded ? "Sending…" : "Confirm in your wallet…");
         const gas = ((await publicClient.estimateGas({ account: account.address as Address, to: call.address, data })) * 12n) / 10n;
         const fees = await publicClient.estimateFeesPerGas();
-        const balance = await publicClient.getBalance({ address: account.address as Address });
+        let balance = await publicClient.getBalance({ address: account.address as Address });
+        if (balance < gas * fees.maxFeePerGas! && embedded) {
+          // Email accounts: the app sends exactly this transaction's fee (see /api/gas/topup for why and the limits).
+          setStage("Covering the network fee…");
+          const r = await fetch("/api/gas/topup", {
+            method: "POST",
+            headers: { "content-type": "application/json", ...(dynamicClient?.token ? { authorization: `Bearer ${dynamicClient.token}` } : {}) },
+            body: JSON.stringify({ address: account.address, data }),
+          });
+          if (!r.ok) {
+            const j = (await r.json().catch(() => ({}))) as { error?: string };
+            throw new Error(j.error ?? "We couldn't cover the network fee right now. Please try again in a minute.");
+          }
+          balance = await publicClient.getBalance({ address: account.address as Address });
+          setStage("Sending…");
+        }
         if (balance < gas * fees.maxFeePerGas!) throw new Error(embedded
           ? "We couldn't cover the network fee right now. Please try again in a minute."
           : "Your wallet needs a little MON for the network fee (get some from the faucet).");
@@ -70,7 +88,9 @@ export function useTx(onConfirmed?: (receipt: TransactionReceipt) => void) {
       else onConfirmed?.(r);
     } catch (e) {
       setStage(undefined);
-      setError(e instanceof BaseError ? e.shortMessage : (e as Error).message.split("\n")[0]);
+      const msg = e instanceof BaseError ? e.shortMessage : ((e as Error).message.split("\n")[0] ?? "");
+      // Dynamic throws this when the app's chain isn't enabled in the Dynamic dashboard (Chains & Networks).
+      setError(/No network data found/i.test(msg) ? "This network isn't enabled for sign-in yet. The organizer of this app needs to enable it." : msg);
     }
   };
 

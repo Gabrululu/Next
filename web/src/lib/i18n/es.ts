@@ -278,6 +278,18 @@ export const es: Record<string, string> = {
 
   // ---- transactions
   "Sign in first.": "Primero ingresa.",
+  "Covering the network fee…": "Cubriendo la comisión de red…",
+  "Fee top-up is not configured": "La cobertura de comisiones no está configurada",
+  "That account isn't yours": "Esa cuenta no es tuya",
+  "That action would fail, so no fee was sent.": "Esa acción fallaría, así que no se envió la comisión.",
+  "Fee too high to cover": "La comisión es demasiado alta para cubrirla",
+  "Daily fee limit reached for this account. Try again tomorrow.": "Esta cuenta alcanzó el límite diario de comisiones. Inténtalo mañana.",
+  "The app's daily fee budget is used up. Try again tomorrow.": "Se agotó el presupuesto diario de comisiones de la app. Inténtalo mañana.",
+  "Top-up failed": "No se pudo cubrir la comisión",
+  "Couldn't send the fee right now. Try again in a minute.": "No se pudo enviar la comisión ahora. Inténtalo en un minuto.",
+  "Bad request": "Solicitud inválida",
+  "Invalid session": "Sesión inválida",
+  "This network isn't enabled for sign-in yet. The organizer of this app needs to enable it.": "Esta red aún no está habilitada para el ingreso. Quien administra esta app debe habilitarla.",
   "Getting ready…": "Preparando…",
   "Sending (fees covered)…": "Enviando (comisión cubierta)…",
   "Sending…": "Enviando…",
